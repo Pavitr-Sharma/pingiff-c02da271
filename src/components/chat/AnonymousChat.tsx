@@ -1,26 +1,31 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, MessageCircle, X, User } from "lucide-react";
+import { Send, MessageCircle, X, User, Clock, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface Message {
-  id: string;
-  text: string;
-  sender: "scanner" | "owner";
-  timestamp: Date;
-}
+import {
+  ChatMessage,
+  getOrCreateChatSession,
+  sendMessage,
+  subscribeToMessages,
+  endChatSession,
+  getSessionTimeRemaining,
+} from "@/lib/chatService";
 
 interface AnonymousChatProps {
+  vehicleId: string;
   vehiclePlate: string;
   isOwner?: boolean;
   onClose?: () => void;
 }
 
-const AnonymousChat = ({ vehiclePlate, isOwner = false, onClose }: AnonymousChatProps) => {
-  const [messages, setMessages] = useState<Message[]>([]);
+const AnonymousChat = ({ vehicleId, vehiclePlate, isOwner = false, onClose }: AnonymousChatProps) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<number>(30);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const senderType = isOwner ? "owner" : "scanner";
 
@@ -32,46 +37,69 @@ const AnonymousChat = ({ vehiclePlate, isOwner = false, onClose }: AnonymousChat
     scrollToBottom();
   }, [messages]);
 
-  // Initial welcome message
+  // Initialize chat session
   useEffect(() => {
-    const welcomeMessage: Message = {
-      id: "welcome",
-      text: isOwner 
-        ? "Someone scanned your vehicle's QR code. Chat with them anonymously."
-        : `You're chatting about vehicle ${vehiclePlate}. Your identity is protected.`,
-      sender: isOwner ? "scanner" : "owner",
-      timestamp: new Date(),
+    const initSession = async () => {
+      try {
+        setIsLoading(true);
+        const id = await getOrCreateChatSession(vehicleId);
+        setSessionId(id);
+        
+        const remaining = await getSessionTimeRemaining(vehicleId);
+        setTimeRemaining(remaining);
+      } catch (err) {
+        console.error("Failed to init chat session:", err);
+        setError("Failed to start chat. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
     };
-    setMessages([welcomeMessage]);
-  }, [vehiclePlate, isOwner]);
+    
+    initSession();
+  }, [vehicleId]);
 
-  const handleSendMessage = () => {
-    if (!newMessage.trim()) return;
+  // Subscribe to messages
+  useEffect(() => {
+    if (!sessionId) return;
+    
+    const unsubscribe = subscribeToMessages(sessionId, (msgs) => {
+      setMessages(msgs);
+    });
+    
+    return () => unsubscribe();
+  }, [sessionId]);
 
-    const message: Message = {
-      id: Date.now().toString(),
-      text: newMessage.trim(),
-      sender: senderType,
-      timestamp: new Date(),
-    };
+  // Update time remaining every minute
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const remaining = await getSessionTimeRemaining(vehicleId);
+      setTimeRemaining(remaining);
+      
+      // Auto-end if expired
+      if (remaining <= 0 && sessionId) {
+        await handleEndChat();
+      }
+    }, 60000);
+    
+    return () => clearInterval(interval);
+  }, [vehicleId, sessionId]);
 
-    setMessages((prev) => [...prev, message]);
-    setNewMessage("");
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !sessionId) return;
 
-    // Simulate typing indicator and auto-response for demo
-    if (!isOwner) {
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        const autoReply: Message = {
-          id: (Date.now() + 1).toString(),
-          text: "Thanks for reaching out! I'll be there shortly.",
-          sender: "owner",
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, autoReply]);
-      }, 2000);
+    try {
+      await sendMessage(sessionId, newMessage.trim(), senderType);
+      setNewMessage("");
+    } catch (err) {
+      console.error("Failed to send message:", err);
     }
+  };
+
+  const handleEndChat = async () => {
+    if (sessionId) {
+      await endChatSession(vehicleId, sessionId);
+    }
+    onClose?.();
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -81,14 +109,31 @@ const AnonymousChat = ({ vehiclePlate, isOwner = false, onClose }: AnonymousChat
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-ping-yellow/30 items-center justify-center p-8">
+        <div className="w-12 h-12 border-4 border-ping-yellow border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-ping-brown">Starting secure chat...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col h-full bg-white rounded-2xl border-2 border-red-200 items-center justify-center p-8">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <p className="text-red-600 text-center mb-4">{error}</p>
+        <Button onClick={onClose} variant="outline">Go Back</Button>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex flex-col h-full bg-white rounded-2xl border-2 border-ping-yellow/30 overflow-hidden"
-      style={{
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)',
-      }}
+      style={{ boxShadow: '0 20px 40px rgba(0, 0, 0, 0.08)' }}
     >
       {/* Chat Header */}
       <div className="bg-ping-yellow px-4 py-3 flex items-center justify-between">
@@ -101,25 +146,38 @@ const AnonymousChat = ({ vehiclePlate, isOwner = false, onClose }: AnonymousChat
             <p className="text-xs text-ping-ink/70">Vehicle: {vehiclePlate}</p>
           </div>
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-ping-ink/10 rounded-full transition-colors"
-          >
-            <X className="w-5 h-5 text-ping-ink" />
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-ping-ink/10 px-2 py-1 rounded-full">
+            <Clock className="w-3 h-3 text-ping-ink" />
+            <span className="text-xs font-medium text-ping-ink">{timeRemaining}m</span>
+          </div>
+          {onClose && (
+            <button
+              onClick={handleEndChat}
+              className="p-2 hover:bg-ping-ink/10 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-ping-ink" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Privacy Notice */}
       <div className="bg-ping-cream/50 px-4 py-2 text-center">
         <p className="text-xs text-ping-brown">
-          🔒 Messages are not stored. Chat ends when you leave.
+          🔒 Messages auto-delete after {timeRemaining} minutes. No data stored.
         </p>
       </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-ping-cream/30">
+        {messages.length === 0 && (
+          <div className="text-center text-ping-brown/60 py-8">
+            <MessageCircle className="w-12 h-12 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">No messages yet. Start the conversation!</p>
+          </div>
+        )}
+        
         <AnimatePresence initial={false}>
           {messages.map((message) => (
             <motion.div
@@ -144,29 +202,12 @@ const AnonymousChat = ({ vehiclePlate, isOwner = false, onClose }: AnonymousChat
                 </div>
                 <p className="text-sm">{message.text}</p>
                 <p className="text-[10px] opacity-50 mt-1 text-right">
-                  {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
-
-        {/* Typing Indicator */}
-        {isTyping && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
-          >
-            <div className="bg-white border border-ping-ink/10 rounded-2xl rounded-bl-md px-4 py-3">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-ping-ink/40 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 bg-ping-ink/40 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 bg-ping-ink/40 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          </motion.div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>

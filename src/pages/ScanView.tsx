@@ -143,6 +143,7 @@ const ScanView = () => {
         </header>
         <div className="flex-1 p-4">
           <AnonymousChat 
+            vehicleId={vehicle.id}
             vehiclePlate={maskPlateNumber(vehicle.plateNumber)}
             isOwner={false}
             onClose={() => setShowChat(false)}
