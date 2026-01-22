@@ -12,6 +12,7 @@ const firebaseConfig = {
   messagingSenderId: "302920931774",
   appId: "1:302920931774:web:e6710da2960ba1089081ef",
   measurementId: "G-5WDX03B74N",
+  databaseURL: "https://pingme-2a544-default-rtdb.firebaseio.com",
   // apiKey: "AIzaSyBaFuw33zzZUme7CDUb7dpII3YeKgimN4w",
   // authDomain: "pingmereg.firebaseapp.com",
   // projectId: "pingmereg",
