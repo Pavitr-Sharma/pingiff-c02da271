@@ -4,17 +4,26 @@ import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 
 // Firebase Config
-const firebaseConfig = {
-  apiKey: "AIzaSyBvmo07xwtxvhs1Jbk4HrCrtS2B0QhQ-Ck",
-  authDomain: "pingme-2a544.firebaseapp.com",
-  projectId: "pingme-2a544",
-  storageBucket: "pingme-2a544.firebasestorage.app",
-  messagingSenderId: "302920931774",
-  appId: "1:302920931774:web:e6710da2960ba1089081ef",
-  measurementId: "G-5WDX03B74N",
-  databaseURL: "https://pingme-2a544-default-rtdb.firebaseio.com",
-};
+// const firebaseConfig = {
+//   apiKey: "AIzaSyBvmo07xwtxvhs1Jbk4HrCrtS2B0QhQ-Ck",
+//   authDomain: "pingme-2a544.firebaseapp.com",
+//   projectId: "pingme-2a544",
+//   storageBucket: "pingme-2a544.firebasestorage.app",
+//   messagingSenderId: "302920931774",
+//   appId: "1:302920931774:web:e6710da2960ba1089081ef",
+//   measurementId: "G-5WDX03B74N",
+//   databaseURL: "https://pingme-2a544-default-rtdb.firebaseio.com",
+// };
 
+const firebaseConfig = {
+  apiKey: "AIzaSyA29m_ZE0EEm5nAqLYVkjtSKU9rSSTts2Q",
+  authDomain: "ping-me-eedd0.firebaseapp.com",
+  projectId: "ping-me-eedd0",
+  storageBucket: "ping-me-eedd0.firebasestorage.app",
+  messagingSenderId: "441441409182",
+  appId: "1:441441409182:web:d2ce715476830aaf9ac38f",
+  measurementId: "G-JLHT8LK9HV",
+};
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
@@ -26,10 +35,10 @@ export const googleProvider = new GoogleAuthProvider();
 
 // Enable offline persistence for Firestore
 enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    console.warn('Firestore persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    console.warn('Firestore persistence not supported');
+  if (err.code === "failed-precondition") {
+    console.warn("Firestore persistence failed: Multiple tabs open");
+  } else if (err.code === "unimplemented") {
+    console.warn("Firestore persistence not supported");
   }
 });
 
