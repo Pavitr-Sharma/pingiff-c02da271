@@ -15,15 +15,23 @@ import { getDatabase } from "firebase/database";
 //   databaseURL: "https://pingme-2a544-default-rtdb.firebaseio.com",
 // };
 
+// const firebaseConfig = {
+//   apiKey: "AIzaSyA29m_ZE0EEm5nAqLYVkjtSKU9rSSTts2Q",
+//   authDomain: "ping-me-eedd0.firebaseapp.com",
+//   projectId: "ping-me-eedd0",
+//   storageBucket: "ping-me-eedd0.firebasestorage.app",
+//   messagingSenderId: "441441409182",
+//   appId: "1:441441409182:web:d2ce715476830aaf9ac38f",
+//   measurementId: "G-JLHT8LK9HV",
+//   databaseURL: "https://ping-me-eedd0-default-rtdb.firebaseio.com",
+// };
 const firebaseConfig = {
-  apiKey: "AIzaSyA29m_ZE0EEm5nAqLYVkjtSKU9rSSTts2Q",
-  authDomain: "ping-me-eedd0.firebaseapp.com",
-  projectId: "ping-me-eedd0",
-  storageBucket: "ping-me-eedd0.firebasestorage.app",
-  messagingSenderId: "441441409182",
-  appId: "1:441441409182:web:d2ce715476830aaf9ac38f",
-  measurementId: "G-JLHT8LK9HV",
-  databaseURL: "https://ping-me-eedd0-default-rtdb.firebaseio.com",
+  apiKey: "AIzaSyBaFuw33zzZUme7CDUb7dpII3YeKgimN4w",
+  authDomain: "pingmereg.firebaseapp.com",
+  projectId: "pingmereg",
+  storageBucket: "pingmereg.firebasestorage.app",
+  messagingSenderId: "1098521383686",
+  appId: "1:1098521383686:web:b2c777e80121311a144487",
 };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
@@ -50,7 +58,7 @@ export const setupRecaptcha = (containerId: string): RecaptchaVerifier => {
   if (recaptchaVerifier) {
     return recaptchaVerifier;
   }
-  
+
   recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
     size: "invisible",
     callback: () => {},
@@ -59,7 +67,7 @@ export const setupRecaptcha = (containerId: string): RecaptchaVerifier => {
       clearRecaptcha();
     },
   });
-  
+
   return recaptchaVerifier;
 };
 
