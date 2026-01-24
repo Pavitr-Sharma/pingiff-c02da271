@@ -16,6 +16,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import VehicleQRCode from "@/components/qr/VehicleQRCode";
+import OwnerChatList from "@/components/chat/OwnerChatList";
 import logo from "@/assets/ping-me-logo.png";
 import productCard from "@/assets/product-card.png";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,6 +35,7 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showChats, setShowChats] = useState(false);
 
   // Add vehicle form state
   const [newPlate, setNewPlate] = useState("");
@@ -285,21 +287,23 @@ const Dashboard = () => {
             </DialogContent>
           </Dialog>
 
-          <button
-            className="bg-card p-4 rounded-2xl border border-border text-left hover:border-primary/50 hover:shadow-md transition-all"
-            onClick={() => toast({ title: "Coming Soon", description: "Alert history will be available soon!" })}
-          >
-            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3 relative">
-              <AlertCircle className="w-6 h-6" />
-              {pendingAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                  {pendingAlerts}
-                </span>
-              )}
-            </div>
-            <h3 className="font-semibold text-sm">Alerts</h3>
-            <p className="text-muted-foreground text-xs">{pendingAlerts} pending alerts</p>
-          </button>
+          <Dialog open={showChats} onOpenChange={setShowChats}>
+            <DialogTrigger asChild>
+              <button className="bg-card p-4 rounded-2xl border border-border text-left hover:border-primary/50 hover:shadow-md transition-all">
+                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
+                  <MessageCircle className="w-6 h-6" />
+                </div>
+                <h3 className="font-semibold text-sm">Chats</h3>
+                <p className="text-muted-foreground text-xs">Reply to scanners</p>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md p-0 overflow-hidden">
+              <OwnerChatList 
+                vehicles={vehicles.map(v => ({ id: v.id, plateNumber: v.plateNumber }))} 
+                onClose={() => setShowChats(false)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Order Section */}
