@@ -61,6 +61,7 @@ const VehicleCard = ({ vehicle, alerts, index }: VehicleCardProps) => {
   
   const vehicleAlerts = alerts.filter((a) => a.vehicleId === vehicle.id);
   const pendingAlerts = vehicleAlerts.filter((a) => a.status === "pending");
+  const resolvedAlerts = vehicleAlerts.filter((a) => a.status === "resolved");
 
   const handleResolveAlert = async (alertId: string) => {
     setResolvingAlert(alertId);
@@ -236,46 +237,33 @@ const VehicleCard = ({ vehicle, alerts, index }: VehicleCardProps) => {
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="p-4 space-y-3">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                Recent Alerts
-              </h4>
+            <div className="p-4 space-y-4">
+              {/* Pending Alerts Section */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Pending Alerts
+                </h4>
 
-              {vehicleAlerts.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No alerts yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {vehicleAlerts.slice(0, 5).map((alert) => (
-                    <div
-                      key={alert.id}
-                      className={`p-3 rounded-xl border ${
-                        alert.status === "pending"
-                          ? "bg-destructive/5 border-destructive/20"
-                          : alert.status === "resolved"
-                          ? "bg-success/5 border-success/20"
-                          : "bg-muted border-border"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-2">
-                          {alert.status === "resolved" ? (
-                            <CheckCircle className="w-4 h-4 text-success" />
-                          ) : (
-                            <AlertCircle
-                              className={`w-4 h-4 ${
-                                alert.status === "pending" ? "text-destructive" : "text-muted-foreground"
-                              }`}
-                            />
-                          )}
-                          <span className="text-sm font-medium">
-                            {alertLabels[alert.alertType] || alert.alertType}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {alert.status === "pending" && (
+                {pendingAlerts.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground bg-muted/30 rounded-xl">
+                    <Bell className="w-6 h-6 mx-auto mb-1 opacity-30" />
+                    <p className="text-sm">No pending alerts</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pendingAlerts.slice(0, 5).map((alert) => (
+                      <div
+                        key={alert.id}
+                        className="p-3 rounded-xl border bg-destructive/5 border-destructive/20"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 text-destructive" />
+                            <span className="text-sm font-medium">
+                              {alertLabels[alert.alertType] || alert.alertType}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleResolveAlert(alert.id)}
                               disabled={resolvingAlert === alert.id}
@@ -287,25 +275,49 @@ const VehicleCard = ({ vehicle, alerts, index }: VehicleCardProps) => {
                                 "Resolve"
                               )}
                             </button>
-                          )}
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded-full ${
-                              alert.status === "pending"
-                                ? "bg-destructive/10 text-destructive"
-                                : alert.status === "resolved"
-                                ? "bg-success/10 text-success"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {alert.status}
+                            <span className="text-xs px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                              pending
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {alert.timestamp.toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Alert History Section */}
+              {resolvedAlerts.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Alert History
+                  </h4>
+                  <div className="space-y-2">
+                    {resolvedAlerts.slice(0, 5).map((alert) => (
+                      <div
+                        key={alert.id}
+                        className="p-3 rounded-xl border bg-success/5 border-success/20"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="w-4 h-4 text-success" />
+                            <span className="text-sm font-medium">
+                              {alertLabels[alert.alertType] || alert.alertType}
+                            </span>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-success/10 text-success">
+                            resolved
                           </span>
                         </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {alert.timestamp.toLocaleString()}
+                        </p>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {alert.timestamp.toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
