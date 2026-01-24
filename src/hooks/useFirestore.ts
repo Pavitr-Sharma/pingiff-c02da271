@@ -130,6 +130,7 @@ export const useVehicleByQrUuid = (qrUuid: string | undefined) => {
 export const useAlerts = (vehicleIds: string[]) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     if (vehicleIds.length === 0) {
@@ -138,26 +139,40 @@ export const useAlerts = (vehicleIds: string[]) => {
       return;
     }
 
+    // Query without orderBy to avoid needing composite index
+    // We'll sort client-side instead
     const q = query(
       collection(db, 'alerts'),
-      where('vehicleId', 'in', vehicleIds),
-      orderBy('timestamp', 'desc')
+      where('vehicleId', 'in', vehicleIds)
     );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const alertList: Alert[] = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        timestamp: doc.data().timestamp?.toDate() || new Date()
-      })) as Alert[];
-      setAlerts(alertList);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q, 
+      (snapshot) => {
+        const alertList: Alert[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate() || new Date()
+        })) as Alert[];
+        
+        // Sort by timestamp descending (client-side)
+        alertList.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+        
+        setAlerts(alertList);
+        setLoading(false);
+        setError(null);
+      },
+      (err) => {
+        console.error('Alerts fetch error:', err);
+        setError(err);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [vehicleIds.join(',')]);
 
-  return { alerts, loading };
+  return { alerts, loading, error };
 };
 
 // Add a new vehicle with timeout
