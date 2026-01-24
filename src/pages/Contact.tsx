@@ -56,7 +56,7 @@ const Contact = () => {
                   <div>
                     <h3 className="font-bold mb-1">Address</h3>
                     <p className="text-muted-foreground">
-                      WBI, 1st Floor, Shakarpur, New Delhi 110092
+                      745 Kesho Ram Complex Sector 45 Chandigarh
                     </p>
                   </div>
                 </div>
@@ -67,7 +67,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-bold mb-1">Phone</h3>
-                    <p className="text-muted-foreground">+91 98765 43210</p>
+                    <p className="text-muted-foreground">+91 7347340007</p>
                   </div>
                 </div>
 
@@ -77,7 +77,7 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-bold mb-1">Email</h3>
-                    <p className="text-muted-foreground">hello@pingme.in</p>
+                    <p className="text-muted-foreground"contact@pingiff.ai</p>
                   </div>
                 </div>
               </div>
