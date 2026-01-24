@@ -32,6 +32,7 @@ const firebaseConfig = {
   storageBucket: "pingmereg.firebasestorage.app",
   messagingSenderId: "1098521383686",
   appId: "1:1098521383686:web:b2c777e80121311a144487",
+  databaseURL: "https://pingmereg-default-rtdb.firebaseio.com",
 };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
