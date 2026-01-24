@@ -313,7 +313,7 @@ const Dashboard = () => {
             className="bg-card rounded-2xl overflow-hidden border border-border shadow-lg"
           >
             <div className="bg-primary/10 flex items-center justify-center py-3 md:py-6">
-              <img src={productCard} alt="PingME Card" className="w-[220px] md:w-[280px] lg:w-[320px] object-contain" />
+              <img src={productCard} alt="PingME Card" className="w-[350px] md:w-[350px] lg:w-[350px] object-contain" />
             </div>
 
             <div className="p-6">
