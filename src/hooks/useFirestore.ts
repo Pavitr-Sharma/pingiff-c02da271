@@ -175,7 +175,18 @@ export const useAlerts = (vehicleIds: string[]) => {
   return { alerts, loading, error };
 };
 
-// Add a new vehicle with timeout
+// Check if vehicle plate number already exists
+export const checkPlateNumberExists = async (plateNumber: string): Promise<boolean> => {
+  const normalizedPlate = plateNumber.toUpperCase().replace(/\s+/g, '');
+  const q = query(
+    collection(db, 'vehicles'),
+    where('plateNumber', '==', normalizedPlate)
+  );
+  const snapshot = await getDocs(q);
+  return !snapshot.empty;
+};
+
+// Add a new vehicle with timeout and duplicate check
 export const addVehicle = async (
   ownerId: string,
   plateNumber: string,
@@ -183,6 +194,14 @@ export const addVehicle = async (
   type: 'Car' | 'Bike',
   color?: string
 ): Promise<string> => {
+  const normalizedPlate = plateNumber.toUpperCase().replace(/\s+/g, '');
+  
+  // Check for duplicate plate number first
+  const plateExists = await checkPlateNumberExists(normalizedPlate);
+  if (plateExists) {
+    throw new Error('This vehicle is already registered by another person.');
+  }
+  
   const qrUuid = generateQrUuid();
   
   // Set timeout for Firestore operation
@@ -194,7 +213,7 @@ export const addVehicle = async (
     const docRef = await Promise.race([
       addDoc(collection(db, 'vehicles'), {
         ownerId,
-        plateNumber: plateNumber.toUpperCase(),
+        plateNumber: normalizedPlate,
         model,
         type,
         color: color || '',

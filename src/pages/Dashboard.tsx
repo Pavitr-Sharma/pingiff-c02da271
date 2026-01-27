@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import {
   Bell,
   Settings,
   Loader2,
+  X,
 } from "lucide-react";
 import VehicleCard from "@/components/vehicle/VehicleCard";
 import logo from "@/assets/ping-me-logo.png";
@@ -21,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const Dashboard = () => {
   const { user, userProfile, logout } = useAuth();
@@ -32,6 +34,8 @@ const Dashboard = () => {
 
 
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Add vehicle form state
   const [newPlate, setNewPlate] = useState("");
@@ -40,7 +44,8 @@ const Dashboard = () => {
   const [newColor, setNewColor] = useState("");
   const [addingVehicle, setAddingVehicle] = useState(false);
 
-  const pendingAlerts = alerts.filter((a) => a.status === "pending").length;
+  const pendingAlerts = useMemo(() => alerts.filter((a) => a.status === "pending"), [alerts]);
+  const pendingAlertCount = pendingAlerts.length;
 
   const handleLogout = async () => {
     try {
@@ -78,10 +83,11 @@ const Dashboard = () => {
       setNewPlate("");
       setNewModel("");
       setNewColor("");
-    } catch (error) {
+      setNewType("Car");
+    } catch (error: any) {
       toast({
         title: "Failed to Add Vehicle",
-        description: "Please try again.",
+        description: error.message || "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -98,17 +104,84 @@ const Dashboard = () => {
             <img src={logo} alt="PingME" className="h-10" />
           </Link>
           <div className="flex items-center gap-2">
-            <button className="p-2 hover:bg-muted rounded-full transition-colors relative">
-              <Bell className="w-5 h-5" />
-              {pendingAlerts > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
-                  {pendingAlerts}
-                </span>
-              )}
-            </button>
-            <button className="p-2 hover:bg-muted rounded-full transition-colors">
-              <Settings className="w-5 h-5" />
-            </button>
+            {/* Notifications Sheet */}
+            <Sheet open={showNotifications} onOpenChange={setShowNotifications}>
+              <SheetTrigger asChild>
+                <button className="p-2 hover:bg-muted rounded-full transition-colors relative">
+                  <Bell className="w-5 h-5" />
+                  {pendingAlertCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                      {pendingAlertCount}
+                    </span>
+                  )}
+                </button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Notifications</SheetTitle>
+                </SheetHeader>
+                <div className="mt-4 space-y-3">
+                  {pendingAlerts.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Bell className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                      <p>No pending notifications</p>
+                    </div>
+                  ) : (
+                    pendingAlerts.map((alert) => {
+                      const vehicle = vehicles.find(v => v.id === alert.vehicleId);
+                      return (
+                        <div key={alert.id} className="p-3 rounded-xl border bg-destructive/5 border-destructive/20">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Bell className="w-4 h-4 text-destructive" />
+                            <span className="font-medium text-sm">{vehicle?.plateNumber || "Unknown"}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{alert.alertType}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {alert.timestamp.toLocaleString()}
+                          </p>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+            {/* Settings Sheet */}
+            <Sheet open={showSettings} onOpenChange={setShowSettings}>
+              <SheetTrigger asChild>
+                <button className="p-2 hover:bg-muted rounded-full transition-colors">
+                  <Settings className="w-5 h-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>Settings</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  <div className="p-4 rounded-xl border border-border">
+                    <h3 className="font-medium mb-2">Account</h3>
+                    <p className="text-sm text-muted-foreground">{userProfile?.fullName || "User"}</p>
+                    <p className="text-sm text-muted-foreground">{userProfile?.email || userProfile?.phoneNumber}</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-border">
+                    <h3 className="font-medium mb-2">Vehicles</h3>
+                    <p className="text-sm text-muted-foreground">{vehicles.length} registered vehicle{vehicles.length !== 1 ? 's' : ''}</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="full"
+                    className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    onClick={() => {
+                      setShowSettings(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
